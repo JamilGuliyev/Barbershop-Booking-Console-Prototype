@@ -25,7 +25,7 @@ type Appointment struct {
 }
 
 var (
-	barbers          = make(map[int]*Barber) // Изменено: теперь указатель на Barber
+	barbers          = make(map[int]*Barber) // Используем указатели на Barber
 	clients          = make(map[int]Client)
 	appointments     = []Appointment{}
 	barbersLock      sync.Mutex
@@ -138,19 +138,63 @@ func showAppointments(clientID int) {
 }
 
 func main() {
-	// Добавляем барберов и клиентов
-	addBarber("Алексей", []string{"10:00", "11:00", "12:00"})
-	addBarber("Иван", []string{"14:00", "15:00"})
-	addClient("Петр")
-	addClient("Сергей")
+	for {
+		var choice int
+		fmt.Println("\nВыберите действие:")
+		fmt.Println("1 - Добавить барбера")
+		fmt.Println("2 - Добавить клиента")
+		fmt.Println("3 - Посмотреть доступные слоты")
+		fmt.Println("4 - Забронировать время")
+		fmt.Println("5 - Отменить запись")
+		fmt.Println("6 - Показать бронирования")
+		fmt.Println("0 - Выход")
+		fmt.Print("Ваш выбор: ")
+		fmt.Scanln(&choice)
 
-	// Демонстрация работы
-	getAvailableSlots(1)
-	bookAppointment(1, 1, "10:00")
-	bookAppointment(2, 1, "12:00")
-	showAppointments(1)
-	showAppointments(2)
-	cancelAppointment(1, "10:00")
-	showAppointments(1)
-	getAvailableSlots(1)
+		switch choice {
+		case 1:
+			var name string
+			fmt.Print("Введите имя барбера: ")
+			fmt.Scanln(&name)
+			addBarber(name, []string{"10:00", "11:00", "12:00"})
+		case 2:
+			var name string
+			fmt.Print("Введите имя клиента: ")
+			fmt.Scanln(&name)
+			addClient(name)
+		case 3:
+			var barberID int
+			fmt.Print("Введите ID барбера: ")
+			fmt.Scanln(&barberID)
+			getAvailableSlots(barberID)
+		case 4:
+			var clientID, barberID int
+			var slot string
+			fmt.Print("Введите ID клиента: ")
+			fmt.Scanln(&clientID)
+			fmt.Print("Введите ID барбера: ")
+			fmt.Scanln(&barberID)
+			fmt.Print("Введите время: ")
+			fmt.Scanln(&slot)
+			bookAppointment(clientID, barberID, slot)
+		case 5:
+			var clientID int
+			var slot string
+			fmt.Print("Введите ID клиента: ")
+			fmt.Scanln(&clientID)
+			fmt.Print("Введите время: ")
+			fmt.Scanln(&slot)
+			cancelAppointment(clientID, slot)
+		case 6:
+			var clientID int
+			fmt.Print("Введите ID клиента: ")
+			fmt.Scanln(&clientID)
+			showAppointments(clientID)
+		case 0:
+			fmt.Println("Выход из программы.")
+			return
+		default:
+			fmt.Println("Некорректный выбор. Попробуйте снова.")
+		}
+	}
 }
