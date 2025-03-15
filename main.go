@@ -38,8 +38,8 @@ var (
 
 // Генерация уникального ID для клиента
 func generateClientID() string {
-	today := time.Now().Format("02.01") // ДД.ММ
-	id := fmt.Sprintf("%s.%04d", today, clientCounter)
+	today := time.Now().Format("0201")                // ДДММ
+	id := fmt.Sprintf("%s%04d", today, clientCounter) // ДДММППНН (Где ППНН - порядковый номер от 0001 до 9999)
 	clientCounter++
 	return id
 }
