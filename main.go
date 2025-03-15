@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 // Структура данных
@@ -14,26 +15,34 @@ type Barber struct {
 }
 
 type Client struct {
-	ID   int
+	ID   string
 	Name string
 }
 
 type Appointment struct {
-	ClientID int
+	ClientID string
 	BarberID int
 	Slot     string
 }
 
 var (
 	barbers          = make(map[int]*Barber) // Используем указатели на Barber
-	clients          = make(map[int]Client)
+	clients          = make(map[string]Client)
 	appointments     = []Appointment{}
 	barbersLock      sync.Mutex
 	clientsLock      sync.Mutex
 	appointmentsLock sync.Mutex
 	nextBarberID     = 1
-	nextClientID     = 1
+	clientCounter    = 1 // Счетчик клиентов за день
 )
+
+// Генерация уникального ID для клиента
+func generateClientID() string {
+	today := time.Now().Format("02.01") // ДД.ММ
+	id := fmt.Sprintf("%s.%04d", today, clientCounter)
+	clientCounter++
+	return id
+}
 
 // Добавление нового барбера
 func addBarber(name string, slots []string) {
@@ -55,13 +64,13 @@ func addClient(name string) {
 	clientsLock.Lock()
 	defer clientsLock.Unlock()
 
+	clientID := generateClientID()
 	client := Client{
-		ID:   nextClientID,
+		ID:   clientID,
 		Name: name,
 	}
-	clients[nextClientID] = client
-	fmt.Printf("👤 Клиент %s добавлен с ID %d\n", name, nextClientID)
-	nextClientID++
+	clients[clientID] = client
+	fmt.Printf("👤 Клиент %s добавлен с ID %s\n", name, clientID)
 }
 
 // Получение доступных слотов барбера
@@ -82,7 +91,7 @@ func getAvailableSlots(barberID int) {
 }
 
 // Бронирование времени у барбера
-func bookAppointment(clientID, barberID int, slot string) {
+func bookAppointment(clientID string, barberID int, slot string) {
 	barbersLock.Lock()
 	appointmentsLock.Lock()
 	defer barbersLock.Unlock()
@@ -100,7 +109,7 @@ func bookAppointment(clientID, barberID int, slot string) {
 			// Удаляем слот из доступных
 			barber.Slots = append(barber.Slots[:i], barber.Slots[i+1:]...)
 			appointments = append(appointments, Appointment{ClientID: clientID, BarberID: barberID, Slot: slot})
-			fmt.Printf("✅ Клиент %d забронировал %s у барбера %s\n", clientID, slot, barber.Name)
+			fmt.Printf("✅ Клиент %s забронировал %s у барбера %s\n", clientID, slot, barber.Name)
 			return
 		}
 	}
@@ -108,7 +117,7 @@ func bookAppointment(clientID, barberID int, slot string) {
 }
 
 // Отмена записи
-func cancelAppointment(clientID int, slot string) {
+func cancelAppointment(clientID string, slot string) {
 	appointmentsLock.Lock()
 	defer appointmentsLock.Unlock()
 
@@ -118,7 +127,7 @@ func cancelAppointment(clientID int, slot string) {
 			if barber, exists := barbers[appt.BarberID]; exists {
 				barber.Slots = append(barber.Slots, slot)
 			}
-			fmt.Printf("❌ Запись на %s отменена клиентом %d\n", slot, clientID)
+			fmt.Printf("❌ Запись на %s отменена клиентом %s\n", slot, clientID)
 			return
 		}
 	}
@@ -126,8 +135,8 @@ func cancelAppointment(clientID int, slot string) {
 }
 
 // Показать записи клиента
-func showAppointments(clientID int) {
-	fmt.Printf("📋 Записи клиента %d:\n", clientID)
+func showAppointments(clientID string) {
+	fmt.Printf("📋 Записи клиента %s:\n", clientID)
 	for _, appt := range appointments {
 		if appt.ClientID == clientID {
 			if barber, exists := barbers[appt.BarberID]; exists {
@@ -168,7 +177,8 @@ func main() {
 			fmt.Scanln(&barberID)
 			getAvailableSlots(barberID)
 		case 4:
-			var clientID, barberID int
+			var clientID string
+			var barberID int
 			var slot string
 			fmt.Print("Введите ID клиента: ")
 			fmt.Scanln(&clientID)
@@ -178,7 +188,7 @@ func main() {
 			fmt.Scanln(&slot)
 			bookAppointment(clientID, barberID, slot)
 		case 5:
-			var clientID int
+			var clientID string
 			var slot string
 			fmt.Print("Введите ID клиента: ")
 			fmt.Scanln(&clientID)
@@ -186,7 +196,7 @@ func main() {
 			fmt.Scanln(&slot)
 			cancelAppointment(clientID, slot)
 		case 6:
-			var clientID int
+			var clientID string
 			fmt.Print("Введите ID клиента: ")
 			fmt.Scanln(&clientID)
 			showAppointments(clientID)
